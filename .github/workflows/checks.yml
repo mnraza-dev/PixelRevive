@@ -1,0 +1,31 @@
+name: Release checks
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: bun install --frozen-lockfile
+      - run: python -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requirements.lock
+      - run: backend/.venv/bin/python -c "from rembg import new_session; new_session('u2netp')"
+        env:
+          U2NET_HOME: ${{ github.workspace }}/backend/models
+      - run: bun run check
+      - run: bunx expo install --check
+      - run: bunx expo export --platform android --output-dir /tmp/android-release-check
+        env:
+          EXPO_PUBLIC_AI_PROVIDER: backend
+          EXPO_PUBLIC_PROCESSING_PROVIDER: local
+      - run: docker build -f backend/Dockerfile -t pixelrevive-backend:check .

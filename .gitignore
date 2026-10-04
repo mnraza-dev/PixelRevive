@@ -41,3 +41,23 @@ example
 # generated native folders
 /ios
 /android
+
+# backend temp uploads
+backend/uploads/
+
+# local env files (app root and backend)
+.env
+.env.local
+
+backend/.venv/
+backend/data/
+backend/models/
+backend/__pycache__/
+backend/.env
+
+deployment/production.env
+
+deployment/railway.env
+
+# Exported deployment images
+deployment/artifacts/

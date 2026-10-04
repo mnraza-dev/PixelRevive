@@ -1,0 +1,9 @@
+*
+!backend/
+backend/*
+!backend/*.js
+!backend/worker.py
+!backend/entrypoint.sh
+!backend/requirements.lock
+!backend/Dockerfile
+backend/*.test.js

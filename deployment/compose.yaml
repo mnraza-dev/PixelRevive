@@ -1,0 +1,66 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    environment:
+      NODE_ENV: production
+      QUOTA_SECRET: ${QUOTA_SECRET:?Set a persistent random quota secret}
+      BACKEND_PROVIDER: ${BACKEND_PROVIDER:-local}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      REPLICATE_VERSION_AUTO: ${REPLICATE_VERSION_AUTO:-}
+      REPLICATE_VERSION_FACE_ENHANCE: ${REPLICATE_VERSION_FACE_ENHANCE:-}
+      REPLICATE_VERSION_PHOTO_RESTORE: ${REPLICATE_VERSION_PHOTO_RESTORE:-}
+      REPLICATE_VERSION_HD_UPSCALE: ${REPLICATE_VERSION_HD_UPSCALE:-}
+      REPLICATE_VERSION_SHARPEN: ${REPLICATE_VERSION_SHARPEN:-}
+      REPLICATE_VERSION_REMOVE_BG: ${REPLICATE_VERSION_REMOVE_BG:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      DAILY_FREE_LIMIT: ${DAILY_FREE_LIMIT:-3}
+      GLOBAL_DAILY_LIMIT: ${GLOBAL_DAILY_LIMIT:-100}
+      MAX_CONCURRENT_JOBS: ${MAX_CONCURRENT_JOBS:-2}
+      RESULT_TTL_HOURS: 24
+      TRUSTED_PROXY_IPS: 172.30.0.2
+    volumes:
+      - photo_data:/data
+    networks:
+      studio:
+        ipv4_address: 172.30.0.3
+    mem_limit: 4g
+    cpus: 2
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  edge:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set the public API hostname}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls_data:/data
+      - tls_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      studio:
+        ipv4_address: 172.30.0.2
+networks:
+  studio:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+volumes:
+  photo_data:
+  tls_data:
+  tls_config:
